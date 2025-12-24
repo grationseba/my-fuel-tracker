@@ -14,7 +14,6 @@ try:
     df = conn.read(worksheet="logs", ttl="0")
     if df is not None and not df.empty:
         df['Date'] = pd.to_datetime(df['Date'])
-        # Ensure numeric columns are correct
         for col in ['Odometer', 'Liters', 'Price_Per_L']:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     else:
@@ -45,8 +44,45 @@ if not df.empty and len(df) >= 1:
     st.divider()
 
 # --- INPUT FORM ---
+# Everything inside this "with" block is part of the form
 with st.form("fuel_form", clear_on_submit=True):
     date = st.date_input("Date", value=datetime.now())
     
-    # Petrol Type Dropdown
-    fuel_type
+    fuel_type = st.selectbox("Petrol Type", ["92 Octane", "95 Octane"])
+    
+    # Logic for default price
+    default_price = 294.0 if fuel_type == "92 Octane" else 335.0
+    
+    last_odo = int(df['Odometer'].max()) if not df.empty else 0
+    odo = st.number_input("Odometer Reading", min_value=last_odo, value=last_odo)
+    
+    liters = st.number_input("Liters Added", min_value=0.0, max_value=35.0, value=0.0)
+    
+    price = st.number_input("Price per Liter (Rs.)", min_value=0.0, value=default_price)
+    
+    # THE BUTTON (Must be inside the "with" block)
+    submit = st.form_submit_button("Save Entry")
+    
+    if submit:
+        if liters == 0:
+            st.error("Please enter the amount of liters added.")
+        elif not df.empty and odo <= last_odo:
+            st.error("Odometer reading must be higher than the last entry.")
+        else:
+            new_row = pd.DataFrame([{
+                "Date": date.strftime('%Y-%m-%d'), 
+                "Odometer": odo, 
+                "Liters": liters, 
+                "Price_Per_L": price, 
+                "Fuel_Type": fuel_type
+            }])
+            updated_df = pd.concat([df, new_row], ignore_index=True)
+            conn.update(worksheet="logs", data=updated_df)
+            st.success(f"Saved {fuel_type} entry!")
+            st.rerun()
+
+# --- HISTORY TABLE ---
+if not df.empty:
+    st.subheader("Recent History")
+    display_df = df.sort_values("Odometer", ascending=False)[["Date", "Odometer", "Liters", "Fuel_Type", "Price_Per_L"]]
+    st.dataframe(display_df, use_container_width=True)
