@@ -63,4 +63,53 @@ if not df.empty:
         last_kpl = dist_last_trip / last_fill_liters if last_fill_liters > 0 else 0
         
         # Overall Avg KPL (Total distance / all fuel added AFTER the first fill)
-        fuel_
+        fuel_consumed_since_start = df['Liters'].iloc[1:].sum()
+        avg_kpl = total_km / fuel_consumed_since_start if fuel_consumed_since_start > 0 else 0
+        
+        c4, c5 = st.columns(2)
+        c4.metric("Last Fill KPL", f"{last_kpl:.2f}")
+        c5.metric("Avg KPL", f"{avg_kpl:.2f}")
+    
+    st.divider()
+
+# --- INPUT FORM ---
+with st.form("fuel_form", clear_on_submit=True):
+    date_input = st.date_input("Date", value=today)
+    fuel_type = st.selectbox("Petrol Type", ["92 Octane", "95 Octane"])
+    
+    # Price logic
+    default_p = 294.0 if fuel_type == "92 Octane" else 335.0
+    
+    last_odo = int(df['Odometer'].max()) if not df.empty else 0
+    odo = st.number_input("Odometer Reading", min_value=last_odo, value=last_odo)
+    
+    liters = st.number_input("Liters Added", min_value=0.0, max_value=35.0, value=0.0)
+    price = st.number_input("Price per Liter (Rs.)", min_value=0.0, value=default_p)
+    
+    submit = st.form_submit_button("Save Entry")
+    
+    if submit:
+        if liters <= 0:
+            st.warning("Please enter the amount of liters.")
+        elif not df.empty and odo <= last_odo:
+            st.error("Odometer reading must be higher than the last entry.")
+        else:
+            new_data = pd.DataFrame([{
+                "Date": date_input,
+                "Odometer": odo,
+                "Liters": liters,
+                "Price_Per_L": price,
+                "Fuel_Type": fuel_type
+            }])
+            
+            # Combine and Update
+            final_df = pd.concat([df, new_data], ignore_index=True)
+            conn.update(worksheet="logs", data=final_df)
+            
+            st.cache_data.clear()
+            st.success("Saved successfully!")
+            st.rerun()
+
+# --- HISTORY (FILTERED TO LAST 30 DAYS) ---
+if not df.empty:
+    st.subheader("History (Last 30 Days)")
