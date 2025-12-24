@@ -3,42 +3,51 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Fuel Tracker", layout="wide")
+# Set page to wide and hide the top padding
+st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# 1. Custom CSS to create high-quality boxes that CONTAIN the metrics
+# Custom CSS for Mobile Optimization
 st.markdown("""
     <style>
+    /* Remove top padding and hide headers */
+    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Make metrics smaller and side-by-side on mobile */
+    [data-testid="column"] {
+        width: 33% !important;
+        flex: 1 1 33% !important;
+        min-width: 33% !important;
+    }
+    
     [data-testid="stMetric"] {
         background-color: #1e1e1e;
         border: 1px solid #333;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 5px !important;
+        border-radius: 8px;
+        text-align: center;
     }
+    
+    /* Shrink metric text size for mobile */
+    [data-testid="stMetricValue"] { font-size: 1.2rem !important; }
+    [data-testid="stMetricLabel"] { font-size: 0.7rem !important; }
+
     .main-container {
         background-color: #111;
-        padding: 20px;
-        border-radius: 15px;
+        padding: 10px;
+        border-radius: 10px;
         border: 1px solid #222;
-        margin-bottom: 25px;
-    }
-    .box-label {
-        color: #888;
-        font-size: 0.8rem;
-        font-weight: bold;
-        text-transform: uppercase;
         margin-bottom: 10px;
-        text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("⛽ My Fuel Tracker")
-
-# 2. Connection
+# 1. Connection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 3. Load Data
+# 2. Load Data
 try:
     df = conn.read(worksheet="logs", ttl=0)
     if df is not None and not df.empty:
@@ -49,7 +58,6 @@ try:
     else:
         df = pd.DataFrame(columns=["Date", "Odometer", "Liters", "Price_Per_L", "Fuel_Type"])
 except Exception as e:
-    st.error(f"Error loading data: {e}")
     df = pd.DataFrame(columns=["Date", "Odometer", "Liters", "Price_Per_L", "Fuel_Type"])
 
 # --- DATA CALCULATIONS ---
@@ -57,93 +65,64 @@ today = datetime.now().date()
 thirty_days_ago = today - timedelta(days=31)
 
 if not df.empty:
-    # Basic Stats
     total_km = df['Odometer'].max() - df['Odometer'].min()
     total_liters = df['Liters'].sum()
     total_cost = (df['Liters'] * df['Price_Per_L']).sum()
-    
-    # 30 Day Cost
     recent_df = df[df['Date'] >= thirty_days_ago]
     cost_30d = (recent_df['Liters'] * recent_df['Price_Per_L']).sum()
 
     last_trip_dist = 0
     last_kpl = 0
     avg_kpl = 0
-    
     if len(df) > 1:
         last_trip_dist = df['Odometer'].iloc[-1] - df['Odometer'].iloc[-2]
         last_kpl = last_trip_dist / df['Liters'].iloc[-1] if df['Liters'].iloc[-1] > 0 else 0
-        fuel_after_start = df['Liters'].iloc[1:].sum()
-        avg_kpl = total_km / fuel_after_start if fuel_after_start > 0 else 0
+        fuel_consumed = df['Liters'].iloc[1:].sum()
+        avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- THREE BOX SUMMARY SECTION ---
-    st.subheader("Summary")
-    
-    # Grouping everything inside one main container for the "Summary" area
+    # --- THREE BOX SUMMARY (COMPACT) ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown('<p class="box-label">Cost & Distance</p>', unsafe_allow_html=True)
-        st.metric("30 Days Cost", f"Rs. {cost_30d:,.0f}")
-        st.metric("Total Cost", f"Rs. {total_cost:,.0f}")
-        st.metric("Total KM", f"{total_km:,.0f} km")
-
-    with col2:
-        st.markdown('<p class="box-label">Last Trip Info</p>', unsafe_allow_html=True)
-        # Empty space to vertically center the Trip Distance
-        st.write("## ")
-        st.write("## ")
-        st.metric("Trip Distance", f"{last_trip_dist} KM", delta="since last fill")
-        st.write("## ")
-        st.caption("Distance traveled since your previous fill-up.")
-
-    with col3:
-        st.markdown('<p class="box-label">Efficiency</p>', unsafe_allow_html=True)
-        st.metric("Total Liters", f"{total_liters:,.1f} L")
-        st.metric("Last Fill KPL", f"{last_kpl:.2f}")
-        st.metric("Avg KPL", f"{avg_kpl:.2f}")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("30d Cost", f"{cost_30d:,.0f}")
+        st.metric("Tot KM", f"{total_km:,.0f}")
+    with c2:
+        st.metric("Trip KM", f"{last_trip_dist}")
+        st.metric("Avg KPL", f"{avg_kpl:.1f}")
+    with c3:
+        st.metric("Last KPL", f"{last_kpl:.1f}")
+        st.metric("Tot L", f"{total_liters:,.0f}")
     st.markdown('</div>', unsafe_allow_html=True)
+
+# 3. Refresh Button (Compact)
+if st.button("🔄 Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
 
 # --- INPUT FORM ---
 with st.form("fuel_form", clear_on_submit=True):
-    st.markdown("### Add New Entry")
     date_input = st.date_input("Date", value=today)
-    fuel_type = st.selectbox("Petrol Type", ["92 Octane", "95 Octane"])
-    
-    # Auto-price based on petrol type
+    fuel_type = st.selectbox("Type", ["92 Octane", "95 Octane"])
     default_p = 294.0 if fuel_type == "92 Octane" else 335.0
     
     last_odo_val = int(df['Odometer'].max()) if not df.empty else 0
-    odo = st.number_input("Odometer Reading", min_value=last_odo_val, value=last_odo_val)
-    liters = st.number_input("Liters Added", min_value=0.0, max_value=40.0, value=0.0)
-    price = st.number_input("Price (Rs.)", min_value=0.0, value=default_p)
+    odo = st.number_input("Odometer", min_value=last_odo_val, value=last_odo_val)
+    liters = st.number_input("Liters", min_value=0.0, max_value=40.0, value=0.0)
+    price = st.number_input("Price", min_value=0.0, value=default_p)
     
-    submit = st.form_submit_button("Save Entry")
-    
-    if submit:
-        if liters <= 0:
-            st.warning("Please enter liters added.")
-        else:
-            new_data = pd.DataFrame([{
-                "Date": date_input, 
-                "Odometer": odo, 
-                "Liters": liters, 
-                "Price_Per_L": price, 
-                "Fuel_Type": fuel_type
-            }])
-            final_df = pd.concat([df, new_data], ignore_index=True)
-            conn.update(worksheet="logs", data=final_df)
-            
+    if st.form_submit_button("Save Entry"):
+        if liters > 0:
+            new_data = pd.DataFrame([{"Date": date_input, "Odometer": odo, "Liters": liters, "Price_Per_L": price, "Fuel_Type": fuel_type}])
+            conn.update(worksheet="logs", data=pd.concat([df, new_data], ignore_index=True))
             st.cache_data.clear()
-            st.success(f"Saved! You covered {odo - last_odo_val} KM in this trip.")
+            st.success(f"Saved! Trip: {odo - last_odo_val} KM")
             st.rerun()
 
 # --- HISTORY ---
 if not df.empty:
-    st.subheader("History (Last 30 Days)")
+    st.write("---")
     history_view = df[df['Date'] >= thirty_days_ago].copy()
     if not history_view.empty:
-        history_view['Date'] = history_view['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-        view = history_view.sort_values("Odometer", ascending=False)[["Date", "Odometer", "Liters", "Fuel_Type"]]
-        st.dataframe(view, use_container_width=True)
+        history_view['Date'] = history_view['Date'].apply(lambda x: x.strftime('%m-%d'))
+        view = history_view.sort_values("Odometer", ascending=False)[["Date", "Odometer", "Liters"]]
+        st.dataframe(view, use_container_width=True, hide_index=True)
