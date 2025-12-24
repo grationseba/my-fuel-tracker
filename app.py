@@ -6,64 +6,38 @@ from datetime import datetime, timedelta
 # Set page config
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# Custom CSS for absolute fixed-width grid
+# Custom CSS for a raw, box-less grid
 st.markdown("""
     <style>
-    /* 1. Remove all possible padding */
     .block-container { 
         padding-top: 0.5rem !important; 
-        padding-left: 0.1rem !important; 
-        padding-right: 0.1rem !important; 
-        padding-bottom: 0rem !important; 
+        padding-left: 0.5rem !important; 
+        padding-right: 0.5rem !important; 
     }
     header, footer, #MainMenu {visibility: hidden;}
     
-    /* 2. Force 2 columns to be EXACTLY 50% width without exceptions */
-    [data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        width: 100% !important;
-        gap: 2px !important;
+    /* Simple Grid for Text */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 15px;
     }
-    
-    [data-testid="column"] {
-        width: 50% !important;
-        flex: 1 1 50% !important;
-        min-width: 50% !important;
-        max-width: 50% !important;
+    .stat-item {
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
     }
-    
-    /* 3. Force the Metric Box to never expand */
-    [data-testid="stMetric"] {
-        background-color: #1e1e1e;
-        border: 1px solid #333;
-        padding: 5px !important;
-        border-radius: 6px;
-        text-align: center;
-        overflow: hidden !important; /* Prevents text from pushing width */
+    .stat-label {
+        font-size: 0.7rem;
+        color: #888;
+        text-transform: uppercase;
+        display: block;
     }
-    
-    /* 4. Force text to fit and shrink if needed */
-    [data-testid="stMetricValue"] { 
-        font-size: 1.0rem !important; 
-        font-weight: bold !important;
-        white-space: nowrap !important;
-    }
-    [data-testid="stMetricLabel"] { 
-        font-size: 0.6rem !important; 
-        color: #aaaaaa !important;
-        white-space: nowrap !important;
-        display: block !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important; /* Adds '...' if text is too long */
-    }
-
-    .main-container {
-        background-color: #111;
-        padding: 2px;
-        border-radius: 8px;
-        margin-bottom: 5px;
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #fff;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -104,22 +78,35 @@ if not df.empty:
         fuel_consumed = df['Liters'].iloc[1:].sum()
         avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- SUMMARY SECTION (STRICT 3x2 GRID) ---
-    st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    
-    r1c1, r1c2 = st.columns(2)
-    r1c1.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
-    r1c2.metric("Total KM", f"{total_km:,.0f}")
-    
-    r2c1, r2c2 = st.columns(2)
-    r2c1.metric("KM from last Fill Up", f"{last_trip_dist}")
-    r2c2.metric("Avg KPL", f"{avg_kpl:.1f}")
-    
-    r3c1, r3c2 = st.columns(2)
-    r3c1.metric("Last KPL", f"{last_kpl:.1f}")
-    r3c2.metric("Total Liters", f"{total_liters:,.0f}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    # --- RAW TEXT GRID (No Boxes) ---
+    st.markdown(f"""
+    <div class="summary-grid">
+        <div class="stat-item">
+            <span class="stat-label">Last 30 Days Cost</span>
+            <span class="stat-value">Rs. {cost_30d:,.0f}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Total KM</span>
+            <span class="stat-value">{total_km:,.0f} km</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Trip Distance</span>
+            <span class="stat-value">{last_trip_dist} km</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Avg KPL</span>
+            <span class="stat-value">{avg_kpl:.1f}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Last KPL</span>
+            <span class="stat-value">{last_kpl:.1f}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Total Liters</span>
+            <span class="stat-value">{total_liters:,.0f} L</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # 3. Form & History
 if st.button("🔄 Refresh Data"):
@@ -129,7 +116,8 @@ if st.button("🔄 Refresh Data"):
 with st.form("fuel_form", clear_on_submit=True):
     date_input = st.date_input("Date", value=today)
     fuel_type = st.selectbox("Type", ["92 Octane", "95 Octane"])
-    odo = st.number_input("Odometer", min_value=int(df['Odometer'].max()) if not df.empty else 0)
+    last_odo = int(df['Odometer'].max()) if not df.empty else 0
+    odo = st.number_input("Odometer", min_value=last_odo, value=last_odo)
     liters = st.number_input("Liters", min_value=0.0)
     price = st.number_input("Price", value=294.0 if fuel_type == "92 Octane" else 335.0)
     
