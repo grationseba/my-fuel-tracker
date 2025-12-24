@@ -15,7 +15,7 @@ def get_base64(bin_file):
 
 # Try to load the image 'subject.png' from your GitHub folder
 try:
-    bin_str = get_base64('subject.png')
+    bin_str = get_base64('Subject.png')
     bg_image_style = f'background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("data:image/png;base64,{bin_str}");'
 except Exception:
     # If the image isn't found, use a dark grey background
