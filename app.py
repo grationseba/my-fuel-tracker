@@ -6,39 +6,59 @@ from datetime import datetime, timedelta
 # Set page config
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# Custom CSS for a raw, box-less grid
-st.markdown("""
+# REPLACE THIS LINK with your actual car photo link
+CAR_IMAGE_URL = "https://drive.google.com/file/d/1xEvLQ1ZR_tdWVXSxGbohEV4xkPlcASK1/view?usp=sharing" 
+
+# Custom CSS for Background and Grid
+st.markdown(f"""
     <style>
-    .block-container { 
+    /* 1. Background Styling */
+    .stApp {{
+        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{CAR_IMAGE_URL}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+
+    .block-container {{ 
         padding-top: 0.5rem !important; 
         padding-left: 0.5rem !important; 
         padding-right: 0.5rem !important; 
-    }
-    header, footer, #MainMenu {visibility: hidden;}
+    }}
+    header, footer, #MainMenu {{visibility: hidden;}}
     
-    /* Simple Grid for Text */
-    .summary-grid {
+    /* 2. Grid styling with slight glass effect for readability */
+    .summary-grid {{
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
         width: 100%;
         margin-bottom: 15px;
-    }
-    .stat-item {
-        border-bottom: 1px solid #333;
+        background: rgba(0, 0, 0, 0.4); /* Glass effect */
+        padding: 10px;
+        border-radius: 10px;
+    }}
+    .stat-item {{
+        border-bottom: 1px solid rgba(255,255,255,0.1);
         padding-bottom: 5px;
-    }
-    .stat-label {
+    }}
+    .stat-label {{
         font-size: 0.7rem;
-        color: #888;
+        color: #ccc;
         text-transform: uppercase;
         display: block;
-    }
-    .stat-value {
+    }}
+    .stat-value {{
         font-size: 1.1rem;
         font-weight: bold;
         color: #fff;
-    }
+    }}
+    
+    /* Make the form semi-transparent to see the car */
+    div[data-testid="stForm"] {{
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -78,7 +98,7 @@ if not df.empty:
         fuel_consumed = df['Liters'].iloc[1:].sum()
         avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- RAW TEXT GRID (No Boxes) ---
+    # --- RAW TEXT GRID ---
     st.markdown(f"""
     <div class="summary-grid">
         <div class="stat-item">
