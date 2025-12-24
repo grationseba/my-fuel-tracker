@@ -7,6 +7,13 @@ import base64
 # 1. Page Configuration
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
+st.set_page_config(
+    page_title="Fuel Tracker",
+    page_icon="⛽",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
 # 2. Function to load the local image from your GitHub folder
 def get_base64(bin_file):
     try:
