@@ -17,7 +17,7 @@ def get_base64(bin_file):
         return None
 
 # Try to load 'subject.png' from the root folder
-bin_str = get_base64('subject.png')
+bin_str = get_base64('Subject.png')
 if bin_str:
     bg_style = f"background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('data:image/png;base64,{bin_str}');"
 else:
