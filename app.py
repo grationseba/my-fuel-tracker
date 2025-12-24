@@ -58,4 +58,9 @@ if not df.empty:
 
     if len(df) > 1:
         # KPL for the absolute last fill-up
-        dist_last_trip = df['Odometer'].iloc[-1] - df['
+        dist_last_trip = df['Odometer'].iloc[-1] - df['Odometer'].iloc[-2]
+        last_fill_liters = df['Liters'].iloc[-1]
+        last_kpl = dist_last_trip / last_fill_liters if last_fill_liters > 0 else 0
+        
+        # Overall Avg KPL (Total distance / all fuel added AFTER the first fill)
+        fuel_
