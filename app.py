@@ -6,52 +6,54 @@ from datetime import datetime, timedelta
 # Set page to wide and hide the top padding
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# Custom CSS for Mobile Optimization - Forcing 3 columns
+# Custom CSS for Mobile Optimization - 3 Rows of 2 Columns
 st.markdown("""
     <style>
     /* Remove top padding and hide headers */
-    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    .block-container { padding-top: 0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; padding-bottom: 0rem; }
     header {visibility: hidden;}
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* FORCE 3 COLUMNS ON MOBILE */
+    /* FORCE 2 COLUMNS ON MOBILE (to avoid side scrolling) */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
+        gap: 0.5rem !important;
     }
     [data-testid="column"] {
-        width: 33% !important;
-        flex: 1 1 33% !important;
-        min-width: 33% !important;
+        width: 50% !important;
+        flex: 1 1 50% !important;
+        min-width: 50% !important;
     }
     
     /* Box Styling */
     [data-testid="stMetric"] {
         background-color: #1e1e1e;
         border: 1px solid #333;
-        padding: 5px !important;
-        border-radius: 8px;
+        padding: 8px !important;
+        border-radius: 10px;
         text-align: center;
         margin-bottom: 5px;
     }
     
-    /* Text Sizing to fit 3-wide */
-    [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
+    /* Text Sizing for 2-wide layout */
+    [data-testid="stMetricValue"] { font-size: 1.3rem !important; }
     [data-testid="stMetricLabel"] { 
-        font-size: 0.6rem !important; 
+        font-size: 0.75rem !important; 
         white-space: normal !important;
-        height: 35px !important;
+        height: 25px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         line-height: 1.1 !important;
+        margin-bottom: 4px !important;
     }
 
     .main-container {
         background-color: #111;
-        padding: 8px;
+        padding: 5px;
         border-radius: 10px;
         border: 1px solid #222;
         margin-bottom: 10px;
@@ -95,20 +97,23 @@ if not df.empty:
         fuel_consumed = df['Liters'].iloc[1:].sum()
         avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- SUMMARY SECTION (2 ROWS OF 3 BOXES) ---
+    # --- SUMMARY SECTION (3 ROWS OF 2 BOXES) ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
     
-    # ROW 1
-    row1_c1, row1_c2, row1_c3 = st.columns(3)
-    row1_c1.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
-    row1_c2.metric("Total KM", f"{total_km:,.0f}")
-    row1_c3.metric("Total Liters", f"{total_liters:,.0f}")
+    # ROW 1: Costs and Distance
+    r1c1, r1c2 = st.columns(2)
+    r1c1.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
+    r1c2.metric("Total KM", f"{total_km:,.0f}")
     
-    # ROW 2
-    row2_c1, row2_c2, row2_c3 = st.columns(3)
-    row2_c1.metric("KM from last Fill Up", f"{last_trip_dist}")
-    row2_c2.metric("Avg KPL", f"{avg_kpl:.1f}")
-    row2_c3.metric("Last KPL", f"{last_kpl:.1f}")
+    # ROW 2: Trip and Average
+    r2c1, r2c2 = st.columns(2)
+    r2c1.metric("KM from last Fill Up", f"{last_trip_dist}")
+    r2c2.metric("Avg KPL", f"{avg_kpl:.1f}")
+    
+    # ROW 3: Efficiency and Volume
+    r3c1, r3c2 = st.columns(2)
+    r3c1.metric("Last KPL", f"{last_kpl:.1f}")
+    r3c2.metric("Total Liters", f"{total_liters:,.0f}")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
