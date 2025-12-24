@@ -119,4 +119,4 @@ if not df.empty:
     if not history_view.empty:
         history_view['Date'] = history_view['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
         view = history_view.sort_values("Odometer", ascending=False)[["Date", "Odometer", "Liters", "Fuel_Type"]]
-        st.dataframe(view,
+        st.dataframe(view, use_container_width=True)
