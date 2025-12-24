@@ -6,57 +6,67 @@ from datetime import datetime, timedelta
 # Set page to wide and hide the top padding
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# Custom CSS for Mobile Optimization - 3 Rows of 2 Columns
+# Custom CSS for absolute mobile fit (No sideways scrolling)
 st.markdown("""
     <style>
-    /* Remove top padding and hide headers */
-    .block-container { padding-top: 0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; padding-bottom: 0rem; }
-    header {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* 1. Eliminate all outer padding to maximize screen width */
+    .block-container { 
+        padding-top: 0.5rem !important; 
+        padding-left: 0.2rem !important; 
+        padding-right: 0.2rem !important; 
+        padding-bottom: 0rem !important; 
+    }
+    header, footer, #MainMenu {visibility: hidden;}
     
-    /* FORCE 2 COLUMNS ON MOBILE (to avoid side scrolling) */
+    /* 2. FORCE 2 Columns to stay side-by-side without overflow */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 0.5rem !important;
-    }
-    [data-testid="column"] {
-        width: 50% !important;
-        flex: 1 1 50% !important;
-        min-width: 50% !important;
+        width: 100% !important;
+        gap: 4px !important; /* Tiny gap between boxes */
     }
     
-    /* Box Styling */
+    [data-testid="column"] {
+        width: 49% !important; /* Slightly less than 50 to account for borders */
+        flex: 1 1 49% !important;
+        min-width: 49% !important;
+    }
+    
+    /* 3. Make the Metric Boxes much thinner */
     [data-testid="stMetric"] {
         background-color: #1e1e1e;
         border: 1px solid #333;
-        padding: 8px !important;
-        border-radius: 10px;
+        padding: 4px !important; /* Minimum padding */
+        border-radius: 6px;
         text-align: center;
-        margin-bottom: 5px;
+        margin-bottom: 2px !important;
     }
     
-    /* Text Sizing for 2-wide layout */
-    [data-testid="stMetricValue"] { font-size: 1.3rem !important; }
+    /* 4. Shrink text sizes to fit the small boxes */
+    [data-testid="stMetricValue"] { 
+        font-size: 1.1rem !important; 
+        font-weight: bold !important;
+    }
     [data-testid="stMetricLabel"] { 
-        font-size: 0.75rem !important; 
-        white-space: normal !important;
-        height: 25px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1.1 !important;
-        margin-bottom: 4px !important;
+        font-size: 0.65rem !important; 
+        color: #aaaaaa !important;
+        white-space: nowrap !important; /* Stop text from wrapping and making box taller */
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .main-container {
         background-color: #111;
-        padding: 5px;
-        border-radius: 10px;
+        padding: 4px;
+        border-radius: 8px;
         border: 1px solid #222;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
+    }
+    
+    /* Shrink the input form gaps */
+    div[data-testid="stForm"] {
+        padding: 10px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -97,32 +107,31 @@ if not df.empty:
         fuel_consumed = df['Liters'].iloc[1:].sum()
         avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- SUMMARY SECTION (3 ROWS OF 2 BOXES) ---
+    # --- SUMMARY SECTION (3 ROWS OF 2 BOXES - COMPACT) ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
     
-    # ROW 1: Costs and Distance
+    # Row 1
     r1c1, r1c2 = st.columns(2)
-    r1c1.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
+    r1c1.metric("30 Day Cost", f"{cost_30d:,.0f}")
     r1c2.metric("Total KM", f"{total_km:,.0f}")
     
-    # ROW 2: Trip and Average
+    # Row 2
     r2c1, r2c2 = st.columns(2)
-    r2c1.metric("KM from last Fill Up", f"{last_trip_dist}")
+    r2c1.metric("Trip KM", f"{last_trip_dist}")
     r2c2.metric("Avg KPL", f"{avg_kpl:.1f}")
     
-    # ROW 3: Efficiency and Volume
+    # Row 3
     r3c1, r3c2 = st.columns(2)
     r3c1.metric("Last KPL", f"{last_kpl:.1f}")
     r3c2.metric("Total Liters", f"{total_liters:,.0f}")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 3. Refresh Button
+# 3. Refresh & Form
 if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
-# --- INPUT FORM ---
 with st.form("fuel_form", clear_on_submit=True):
     date_input = st.date_input("Date", value=today)
     fuel_type = st.selectbox("Type", ["92 Octane", "95 Octane"])
@@ -138,12 +147,10 @@ with st.form("fuel_form", clear_on_submit=True):
             new_data = pd.DataFrame([{"Date": date_input, "Odometer": odo, "Liters": liters, "Price_Per_L": price, "Fuel_Type": fuel_type}])
             conn.update(worksheet="logs", data=pd.concat([df, new_data], ignore_index=True))
             st.cache_data.clear()
-            st.success(f"Saved! Trip: {odo - last_odo_val} KM")
+            st.success("Saved!")
             st.rerun()
 
-# --- HISTORY ---
 if not df.empty:
-    st.write("---")
     history_view = df[df['Date'] >= thirty_days_ago].copy()
     if not history_view.empty:
         history_view['Date'] = history_view['Date'].apply(lambda x: x.strftime('%m-%d'))
