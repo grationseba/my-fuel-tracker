@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # Set page to wide and hide the top padding
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# Custom CSS for Mobile Optimization
+# Custom CSS for Mobile Optimization - Forcing 3 columns
 st.markdown("""
     <style>
     /* Remove top padding and hide headers */
@@ -15,35 +15,43 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Make metrics smaller and side-by-side on mobile */
+    /* FORCE 3 COLUMNS ON MOBILE */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+    }
     [data-testid="column"] {
         width: 33% !important;
         flex: 1 1 33% !important;
         min-width: 33% !important;
     }
     
+    /* Box Styling */
     [data-testid="stMetric"] {
         background-color: #1e1e1e;
         border: 1px solid #333;
         padding: 5px !important;
         border-radius: 8px;
         text-align: center;
+        margin-bottom: 5px;
     }
     
-    /* Shrink metric text size for mobile to fit longer names */
-    [data-testid="stMetricValue"] { font-size: 1.1rem !important; }
+    /* Text Sizing to fit 3-wide */
+    [data-testid="stMetricValue"] { font-size: 1.0rem !important; }
     [data-testid="stMetricLabel"] { 
-        font-size: 0.65rem !important; 
+        font-size: 0.6rem !important; 
         white-space: normal !important;
-        height: 30px !important;
+        height: 35px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        line-height: 1.1 !important;
     }
 
     .main-container {
         background-color: #111;
-        padding: 10px;
+        padding: 8px;
         border-radius: 10px;
         border: 1px solid #222;
         margin-bottom: 10px;
@@ -87,18 +95,21 @@ if not df.empty:
         fuel_consumed = df['Liters'].iloc[1:].sum()
         avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- THREE BOX SUMMARY (COMPACT WITH UPDATED NAMES) ---
+    # --- SUMMARY SECTION (2 ROWS OF 3 BOXES) ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
-        st.metric("Total KM", f"{total_km:,.0f}")
-    with c2:
-        st.metric("KM from last Fill Up", f"{last_trip_dist}")
-        st.metric("Avg KPL", f"{avg_kpl:.1f}")
-    with c3:
-        st.metric("Last KPL", f"{last_kpl:.1f}")
-        st.metric("Total Liters", f"{total_liters:,.0f}")
+    
+    # ROW 1
+    row1_c1, row1_c2, row1_c3 = st.columns(3)
+    row1_c1.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
+    row1_c2.metric("Total KM", f"{total_km:,.0f}")
+    row1_c3.metric("Total Liters", f"{total_liters:,.0f}")
+    
+    # ROW 2
+    row2_c1, row2_c2, row2_c3 = st.columns(3)
+    row2_c1.metric("KM from last Fill Up", f"{last_trip_dist}")
+    row2_c2.metric("Avg KPL", f"{avg_kpl:.1f}")
+    row2_c3.metric("Last KPL", f"{last_kpl:.1f}")
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 3. Refresh Button
