@@ -6,15 +6,16 @@ from datetime import datetime, timedelta
 # Set page config
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# REPLACE THIS LINK with your actual car photo link
-CAR_IMAGE_URL = "https://drive.google.com/uc?export=view&id="1xEvLQ1ZR_tdWVXSxGbohEV4xkPlcASK1/view"
+# FIX: ID must be alone inside the quotes
+CAR_IMAGE_ID = "1xEvLQ1ZR_tdWVXSxGbohEV4xkPlcASK1" 
+CAR_IMAGE_URL = f"https://drive.google.com/uc?export=view&id={CAR_IMAGE_ID}"
 
 # Custom CSS for Background and Grid
 st.markdown(f"""
     <style>
-    /* 1. Background Styling */
+    /* 1. Background Styling with darker fade (0.8) for better text visibility */
     .stApp {{
-        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{CAR_IMAGE_URL}");
+        background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url("{CAR_IMAGE_URL}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
@@ -27,16 +28,17 @@ st.markdown(f"""
     }}
     header, footer, #MainMenu {{visibility: hidden;}}
     
-    /* 2. Grid styling with slight glass effect for readability */
+    /* 2. Grid styling with slight glass effect */
     .summary-grid {{
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
         width: 100%;
         margin-bottom: 15px;
-        background: rgba(0, 0, 0, 0.4); /* Glass effect */
-        padding: 10px;
+        background: rgba(0, 0, 0, 0.5); 
+        padding: 12px;
         border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
     }}
     .stat-item {{
         border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -44,20 +46,26 @@ st.markdown(f"""
     }}
     .stat-label {{
         font-size: 0.7rem;
-        color: #ccc;
+        color: #aaa;
         text-transform: uppercase;
         display: block;
     }}
     .stat-value {{
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: bold;
         color: #fff;
     }}
     
-    /* Make the form semi-transparent to see the car */
+    /* Make the form semi-transparent */
     div[data-testid="stForm"] {{
-        background: rgba(0, 0, 0, 0.5) !important;
+        background: rgba(0, 0, 0, 0.6) !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 10px !important;
+    }}
+    
+    /* Fix text color for input labels to be white */
+    label, .stMarkdown p {{
+        color: white !important;
     }}
     </style>
     """, unsafe_allow_html=True)
