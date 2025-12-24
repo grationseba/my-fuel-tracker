@@ -14,12 +14,13 @@ try:
     df = conn.read(worksheet="logs", ttl="0")
     if df is not None and not df.empty:
         df['Date'] = pd.to_datetime(df['Date'])
+        # Ensure numeric columns are correct
         for col in ['Odometer', 'Liters', 'Price_Per_L']:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     else:
-        df = pd.DataFrame(columns=["Date", "Odometer", "Liters", "Price_Per_L", "Full_Tank"])
+        df = pd.DataFrame(columns=["Date", "Odometer", "Liters", "Price_Per_L", "Fuel_Type"])
 except Exception:
-    df = pd.DataFrame(columns=["Date", "Odometer", "Liters", "Price_Per_L", "Full_Tank"])
+    df = pd.DataFrame(columns=["Date", "Odometer", "Liters", "Price_Per_L", "Fuel_Type"])
 
 # --- SUMMARY SECTION ---
 if not df.empty and len(df) >= 1:
@@ -47,34 +48,5 @@ if not df.empty and len(df) >= 1:
 with st.form("fuel_form", clear_on_submit=True):
     date = st.date_input("Date", value=datetime.now())
     
-    # Odometer starts at your last reading
-    last_odo = int(df['Odometer'].max()) if not df.empty else 0
-    odo = st.number_input("Odometer Reading", min_value=last_odo, value=last_odo)
-    
-    # Liters now starts at 0, but max is 35
-    liters = st.number_input("Liters Added", min_value=0.0, max_value=35.0, value=0.0, help="Max tank capacity is 35L")
-    
-    price = st.number_input("Price per Liter (Rs.)", min_value=0.0, value=294.0)
-    
-    if st.form_submit_button("Save Entry"):
-        if liters == 0:
-            st.error("Please enter the amount of liters added.")
-        else:
-            new_row = pd.DataFrame([{
-                "Date": date.strftime('%Y-%m-%d'), 
-                "Odometer": odo, 
-                "Liters": liters, 
-                "Price_Per_L": price, 
-                "Full_Tank": "Yes"
-            }])
-            updated_df = pd.concat([df, new_row], ignore_index=True)
-            conn.update(worksheet="logs", data=updated_df)
-            st.success("Entry Saved!")
-            st.rerun()
-
-# --- HISTORY TABLE ---
-if not df.empty:
-    st.subheader("Recent History")
-    # We display only the columns you care about to keep it simple
-    display_df = df.sort_values("Odometer", ascending=False)[["Date", "Odometer", "Liters", "Price_Per_L"]]
-    st.dataframe(display_df, use_container_width=True)
+    # Petrol Type Dropdown
+    fuel_type
