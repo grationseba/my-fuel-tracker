@@ -3,23 +3,26 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Fuel Tracker", layout="wide") # 'wide' helps the 3 boxes fit better
+st.set_page_config(page_title="Fuel Tracker", layout="wide")
 
-# Custom CSS for the "Box" look
+# Custom CSS for integrated metric cards
 st.markdown("""
     <style>
-    .metric-box {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 12px;
-        border: 2px solid #e9ecef;
-        text-align: center;
-        min-height: 220px;
+    .metric-card {
+        background-color: #1e1e1e;
+        padding: 20px;
+        border-radius: 15px;
+        border: 1px solid #333;
+        margin-bottom: 20px;
     }
-    .metric-title {
+    .card-title {
+        color: #888;
+        font-size: 0.9rem;
         font-weight: bold;
-        color: #555;
-        margin-bottom: 10px;
+        text-transform: uppercase;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -48,16 +51,12 @@ today = datetime.now().date()
 thirty_days_ago = today - timedelta(days=31)
 
 if not df.empty:
-    # Basic Stats
     total_km = df['Odometer'].max() - df['Odometer'].min()
     total_liters = df['Liters'].sum()
     total_cost = (df['Liters'] * df['Price_Per_L']).sum()
-    
-    # 30 Day Cost
     recent_df = df[df['Date'] >= thirty_days_ago]
     cost_30d = (recent_df['Liters'] * recent_df['Price_Per_L']).sum()
 
-    # KPL and Trip Stats
     last_trip_dist = 0
     last_kpl = 0
     avg_kpl = 0
@@ -65,30 +64,31 @@ if not df.empty:
     if len(df) > 1:
         last_trip_dist = df['Odometer'].iloc[-1] - df['Odometer'].iloc[-2]
         last_kpl = last_trip_dist / df['Liters'].iloc[-1] if df['Liters'].iloc[-1] > 0 else 0
-        fuel_after_start = df['Liters'].iloc[1:].sum()
-        avg_kpl = total_km / fuel_after_start if fuel_after_start > 0 else 0
+        fuel_consumed_since_start = df['Liters'].iloc[1:].sum()
+        avg_kpl = total_km / fuel_consumed_since_start if fuel_consumed_since_start > 0 else 0
 
-    # --- THREE BOX SUMMARY SECTION ---
-    st.subheader("📊 Summary")
+    # --- THREE CARD SUMMARY SECTION ---
+    st.subheader("Summary")
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown('<div class="metric-box"><p class="metric-title">Cost & Distance</p>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="card-title">Cost & Distance</div>', unsafe_allow_html=True)
         st.metric("30 Days Cost", f"Rs. {cost_30d:,.0f}")
         st.metric("Total Cost", f"Rs. {total_cost:,.0f}")
         st.metric("Total KM", f"{total_km:,.0f} km")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="metric-box" style="border-color: #007bff;"><p class="metric-title">Last Trip Info</p>', unsafe_allow_html=True)
-        st.write("## ") # Spacing
-        st.metric("Trip Distance", f"{last_trip_dist} KM", delta="since last fill", delta_color="normal")
-        st.write("---")
-        st.caption("Distance calculated from your latest entry.")
+        st.markdown('<div class="metric-card" style="border-color: #007bff;"><div class="card-title">Last Trip Info</div>', unsafe_allow_html=True)
+        # Centering the trip distance in the middle card
+        st.write("## ") 
+        st.metric("Last Trip Distance", f"{last_trip_dist} KM")
+        st.write("## ")
+        st.caption("Distance traveled since your previous fill-up.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col3:
-        st.markdown('<div class="metric-box"><p class="metric-title">Efficiency</p>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><div class="card-title">Efficiency</div>', unsafe_allow_html=True)
         st.metric("Total Liters", f"{total_liters:,.1f} L")
         st.metric("Last Fill KPL", f"{last_kpl:.2f}")
         st.metric("Avg KPL", f"{avg_kpl:.2f}")
@@ -102,7 +102,6 @@ with st.form("fuel_form", clear_on_submit=True):
     date_input = st.date_input("Date", value=today)
     fuel_type = st.selectbox("Petrol Type", ["92 Octane", "95 Octane"])
     
-    # Auto-price
     default_p = 294.0 if fuel_type == "92 Octane" else 335.0
     
     last_odo_val = int(df['Odometer'].max()) if not df.empty else 0
@@ -121,7 +120,7 @@ with st.form("fuel_form", clear_on_submit=True):
             conn.update(worksheet="logs", data=final_df)
             
             st.cache_data.clear()
-            st.success(f"Entry Saved! Trip: {odo - last_odo_val} KM")
+            st.success(f"Saved! Trip Distance: {odo - last_odo_val} KM")
             st.rerun()
 
 # --- HISTORY ---
