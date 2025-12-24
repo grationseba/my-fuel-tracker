@@ -2,22 +2,26 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime, timedelta
-import base64
 
 # 1. Page Configuration
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
-# 2. Image Loader (subject.png)
-def get_base64(bin_file):
-    try:
-        with open(bin_file, 'rb') as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    except: return None
+# --- PASTE YOUR GITHUB RAW LINK HERE ---
+CAR_IMAGE_URL = "https://github.com/grationseba/my-fuel-tracker/blob/main/Subject.png" 
 
-bin_str = get_base64('subject.png')
-bg_style = f'background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("data:image/png;base64,{bin_str}");' if bin_str else 'background-color: #111;'
-
+# 2. Custom CSS
+st.markdown(f"""
+    <style>
+    .stApp {{
+        background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url("{CAR_IMAGE_URL}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+    /* ... keep the rest of your CSS exactly the same ... */
+    </style>
+    """, unsafe_allow_html=True)
+    
 # 3. CSS for Grid and Transparency
 st.markdown(f"""
     <style>
