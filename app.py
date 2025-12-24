@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Fuel Tracker", page_icon="⛽", layout="wide")
 
 # REPLACE THIS LINK with your actual car photo link
-CAR_IMAGE_URL = "https://drive.google.com/file/d/1xEvLQ1ZR_tdWVXSxGbohEV4xkPlcASK1/view?usp=sharing" 
+CAR_IMAGE_URL = "https://drive.google.com/file/d/1xEvLQ1ZR_tdWVXSxGbohEV4xkPlcASK1/view?usp=drive_link" 
 
 # Custom CSS for Background and Grid
 st.markdown(f"""
