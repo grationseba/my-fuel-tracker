@@ -30,9 +30,16 @@ st.markdown("""
         text-align: center;
     }
     
-    /* Shrink metric text size for mobile */
-    [data-testid="stMetricValue"] { font-size: 1.2rem !important; }
-    [data-testid="stMetricLabel"] { font-size: 0.7rem !important; }
+    /* Shrink metric text size for mobile to fit longer names */
+    [data-testid="stMetricValue"] { font-size: 1.1rem !important; }
+    [data-testid="stMetricLabel"] { 
+        font-size: 0.65rem !important; 
+        white-space: normal !important;
+        height: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
 
     .main-container {
         background-color: #111;
@@ -80,21 +87,21 @@ if not df.empty:
         fuel_consumed = df['Liters'].iloc[1:].sum()
         avg_kpl = total_km / fuel_consumed if fuel_consumed > 0 else 0
 
-    # --- THREE BOX SUMMARY (COMPACT) ---
+    # --- THREE BOX SUMMARY (COMPACT WITH UPDATED NAMES) ---
     st.markdown('<div class="main-container">', unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.metric("30d Cost", f"{cost_30d:,.0f}")
-        st.metric("Tot KM", f"{total_km:,.0f}")
+        st.metric("Last 30 Days cost", f"{cost_30d:,.0f}")
+        st.metric("Total KM", f"{total_km:,.0f}")
     with c2:
-        st.metric("Trip KM", f"{last_trip_dist}")
+        st.metric("KM from last Fill Up", f"{last_trip_dist}")
         st.metric("Avg KPL", f"{avg_kpl:.1f}")
     with c3:
         st.metric("Last KPL", f"{last_kpl:.1f}")
-        st.metric("Tot L", f"{total_liters:,.0f}")
+        st.metric("Total Liters", f"{total_liters:,.0f}")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 3. Refresh Button (Compact)
+# 3. Refresh Button
 if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
